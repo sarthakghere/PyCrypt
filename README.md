@@ -1,8 +1,8 @@
-# Django File Encryptor
+PyCrypt
 
 ## Overview
 
-The Django File Encryptor is a web application that allows users to securely encrypt and decrypt files using RSA and AES encryption algorithms. Users can generate RSA key pairs, encrypt files with a public key, and decrypt files with a private key.
+The PyCrypt is a web application that allows users to securely encrypt and decrypt files using RSA and AES encryption algorithms. Users can generate RSA key pairs, encrypt files with a public key, and decrypt files with a private key.
 
 ## Features
 
@@ -23,7 +23,7 @@ The Django File Encryptor is a web application that allows users to securely enc
 
     ```sh
     git clone https://github.com/sarthakghere/File-Encryptor.git
-    cd File-Encryptor
+    cd PyCrypt
     ```
 
 2. **Create a virtual environment:**
