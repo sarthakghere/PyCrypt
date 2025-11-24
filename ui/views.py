@@ -12,8 +12,8 @@ def encrypt_ui(request):
     return render(request, 'ui/encrypt.html', {'form': form})
 
 def success(request):
-    encrypted_file_path = request.session.get('encrypted_file_path')
-    decrypted_file_path = request.session.get('decrypted_file_path')
+    encrypted_file_path = request.session.pop('encrypted_file_path', None)
+    decrypted_file_path = request.session.pop('decrypted_file_path', None)
     context = {'encrypted_file_path': encrypted_file_path,
                'decrypted_file_path': decrypted_file_path}
     return render(request, 'ui/success.html', context)

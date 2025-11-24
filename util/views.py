@@ -73,6 +73,7 @@ def encrypt(request):
 
             # Save the path to the encrypted file in the session
             request.session['encrypted_file_path'] = encrypt_file_path
+            request.session.pop('decrypted_file_path', None)
             
             # Redirect to the success page
             return redirect('ui:success')
@@ -140,6 +141,7 @@ def decrypt(request):
             
             # Save the path to the decrypted file in the session
             request.session['decrypted_file_path'] = decrypt_file_path
+            request.session.pop('encrypted_file_path', None)
             
             # Redirect to the success page
             return redirect('ui:success')
