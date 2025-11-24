@@ -10,6 +10,7 @@ import datetime
 import logging
 from django.conf import settings
 from ui.forms import FileEncryptForm, FileDecryptForm
+from .tasks import send_email_task, cleanup_files_task
 
 # Create your views here.
 def generate_keys(request):
@@ -43,30 +44,14 @@ def generate_keys(request):
     
     zip_file_path = f"{directory}.zip"
     shutil.make_archive(directory, 'zip', directory)
-    shutil.rmtree(directory)
+    
+    # Schedule the cleanup of the directory
+    cleanup_files_task.apply_async(args=[directory], countdown=10)
 
     # Set the file path to be deleted after the response
     request.delete_after_response = zip_file_path
     
     return FileResponse(open(zip_file_path, 'rb'), content_type='application/zip')
-
-from django.core.mail import EmailMessage
-
-def send_encrypted_file_email(email, file_path):
-    try:
-        email_subject = "Your Encrypted File"
-        email_body = "Please find your encrypted file attached."
-        email_message = EmailMessage(
-            email_subject,
-            email_body,
-            settings.EMAIL_HOST_USER,
-            [email],
-        )
-        email_message.attach_file(file_path)
-        email_message.send(fail_silently=False)
-        logging.info(f"Successfully sent encrypted file to {email}")
-    except Exception as e:
-        logging.error(f"Failed to send email: {e}")
 
 def encrypt(request):
     if request.method == 'POST':
@@ -84,7 +69,7 @@ def encrypt(request):
             encrypt_file_path = encrypt_file(file_name, public_key_name)
             
             # Send the encrypted file via email
-            send_encrypted_file_email(email, encrypt_file_path)
+            send_email_task.delay(email, encrypt_file_path)
 
             # Save the path to the encrypted file in the session
             request.session['encrypted_file_path'] = encrypt_file_path
@@ -134,8 +119,8 @@ def encrypt_file(file_name, public_key_name):
         # Write the encrypted data
         f.write(encrypted_data)
     
-    # Optionally, clean up the original files after encryption
-    shutil.rmtree(media_path)
+    # Schedule the cleanup of the media directory
+    cleanup_files_task.apply_async(args=[media_path], countdown=3600)
 
     return encrypt_file_path
 
@@ -199,7 +184,8 @@ def decrypt_file(file_name, private_key_name):
         with open(decrypted_file_path, "wb") as f:
             f.write(decrypted_data)
 
-        shutil.rmtree(media_path)
+        # Schedule the cleanup of the media directory
+        cleanup_files_task.apply_async(args=[media_path], countdown=3600)
         return decrypted_file_path
     except Exception as e:
         logging.error(f"Decryption failed: {e}")
