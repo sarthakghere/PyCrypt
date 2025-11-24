@@ -19,7 +19,7 @@ def generate_keys(request):
         key_size=2048
     )
     now = datetime.datetime.now()
-    directory = f'util/media/keys/user_keys_{now.strftime("%Y%m%d%H%M%S")}'
+    directory = os.path.join(settings.MEDIA_ROOT, f'keys/user_keys_{now.strftime("%Y%m%d%H%M%S")}')
     public_key = private_key.public_key()
     
     private_key_path = os.path.join(directory, 'private_key.pem')
@@ -79,7 +79,7 @@ def encrypt(request):
     return redirect('ui:encrypt')
 
 def encrypt_file(file_name, public_key_name):
-    media_path = 'media/'
+    media_path = settings.MEDIA_ROOT
     
     with open(os.path.join(media_path, public_key_name), "rb") as key_file:
         public_key = serialization.load_pem_public_key(key_file.read())
@@ -107,7 +107,7 @@ def encrypt_file(file_name, public_key_name):
     encrypted_data = aesgcm.encrypt(nonce, file_data, None)
 
     # Save the encrypted AES key, nonce, original file extension, and encrypted data to the output file
-    encrypt_file_directory = 'util/media/encrypted_files'
+    encrypt_file_directory = os.path.join(settings.MEDIA_ROOT, 'encrypted_files')
     os.makedirs(encrypt_file_directory, exist_ok=True)
     original_file_extension = os.path.splitext(file_name)[1]  # Get the file extension
     encrypt_file_path = os.path.join(encrypt_file_directory, f'{os.path.splitext(file_name)[0]}.enc')
@@ -147,7 +147,7 @@ def decrypt(request):
 
 def decrypt_file(file_name, private_key_name):
     try:
-        media_path = 'media/'
+        media_path = settings.MEDIA_ROOT
         encrypted_file_path = os.path.join(media_path, file_name)
         logging.debug(f'Encrypted file path: {encrypted_file_path}')
 
@@ -178,7 +178,7 @@ def decrypt_file(file_name, private_key_name):
         aesgcm = AESGCM(aes_key)
         decrypted_data = aesgcm.decrypt(nonce, encrypted_data, None)
 
-        decrypted_file_directory = 'util/media/decrypted_files'
+        decrypted_file_directory = os.path.join(settings.MEDIA_ROOT, 'decrypted_files')
         os.makedirs(decrypted_file_directory, exist_ok=True)
         decrypted_file_path = os.path.join(decrypted_file_directory, f'decrypted_{os.path.basename(file_name).replace(".enc", original_file_extension)}')
         with open(decrypted_file_path, "wb") as f:
