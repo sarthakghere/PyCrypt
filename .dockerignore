@@ -1,0 +1,11 @@
+.env
+venv
+.vscode
+Pipfile.lock
+db.sqlite3
+*/__pycache__
+*/*/__pycache__
+*/*/.DS_Store
+media/
+util/media/
+staticfiles

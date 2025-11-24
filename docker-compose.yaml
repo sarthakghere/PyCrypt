@@ -1,4 +1,5 @@
 services:
+  
   django:
     build:
       context: .
@@ -21,6 +22,26 @@ services:
       - media_volume:/app/mediafiles:ro
     depends_on:
       - django
+  
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+  
+  celery:
+    build:
+      context: .
+      dockerfile: ./docker/django.Dockerfile
+    command: celery -A PyCrypt worker -l info
+    env_file:
+      - .env
+    volumes:
+      - media_volume:/app/mediafiles
+    depends_on:
+      - django
+      - redis
 
 
 volumes:
