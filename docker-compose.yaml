@@ -8,7 +8,7 @@ services:
       - .env
     volumes:
       - media_volume:/app/mediafiles
-      - ./staticfiles:/app/staticfiles
+      - static_volume:/app/staticfiles
 
   nginx:
     build:
@@ -46,3 +46,4 @@ services:
 
 volumes:
   media_volume:
+  static_volume:
