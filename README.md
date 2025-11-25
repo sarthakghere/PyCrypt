@@ -2,7 +2,7 @@ PyCrypt
 
 ## Overview
 
-The PyCrypt is a web application that allows users to securely encrypt and decrypt files using RSA and AES encryption algorithms. Users can generate RSA key pairs, encrypt files with a public key, and decrypt files with a private key.
+PyCrypt is a Django-based web application that allows users to securely encrypt and decrypt files using RSA and AES encryption algorithms. Users can generate RSA key pairs, encrypt files with a public key, and decrypt files with a private key.
 
 ## Features
 
@@ -11,44 +11,29 @@ The PyCrypt is a web application that allows users to securely encrypt and decry
 - **File Decryption**: Decrypt files using the corresponding RSA private key.
 - **File Download**: Download encrypted and decrypted files.
 
-## Requirements
-
-- Python 3.8+
-- Django 3.2+
-- cryptography library
-
 ## Installation
 
-1. **Clone the repository:**
+1. **Create a `.env` file from the example:**
 
     ```sh
-    git clone https://github.com/sarthakghere/File-Encryptor.git
-    cd PyCrypt
+    cp .env.example .env
     ```
 
-2. **Create a virtual environment:**
+2. **Run the docker containers:**
 
     ```sh
-    python3 -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    docker-compose up -d
     ```
 
-3. **Install dependencies:**
+3. **Run migrations:**
 
     ```sh
-    pip3 install -r requirements.txt
+    docker-compose exec django python manage.py migrate
     ```
 
-4. **Run the development server:**
+4. **Access the application:**
 
-    ```sh
-    cd encryptor
-    python3 manage.py runserver
-    ```
-
-6. **Access the application:**
-
-    Open your web browser and navigate to `http://127.0.0.1:8000`.
+    Open your web browser and navigate to `localhost`.
 
 ## Usage
 
