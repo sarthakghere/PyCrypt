@@ -1,32 +1,175 @@
 {% extends 'ui/base.html' %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encrypt File</title>
-</head>
-<body>
-    {% block content %}
-    <title>Encrypt File</title>
-<div class="container mt-5">
+{% block content %}
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h2 class="card-title text-center mb-4">Encrypt File</h2>
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+
+                    <h3 class="text-center mb-4 fw-bold">🔐 Encrypt File</h3>
+
                     <form method="POST" action="{% url 'util:encrypt' %}" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary btn-block">Encrypt</button>
+
+                        <!-- File to encrypt -->
+                        <div class="mb-3 js-dropzone">
+                            {{ form.file.label_tag }}
+
+                            {{ form.file }}
+
+                            <div class="dropzone-ui mt-1">
+                                <p class="dropzone-title mb-1">
+                                    Drop file here or click to browse
+                                </p>
+                                <p class="dropzone-sub text-muted mb-0">
+                                    No file selected
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Public key -->
+                        <div class="mb-3 js-dropzone">
+                            {{ form.publicKey.label_tag }}
+
+                            {{ form.publicKey }}
+
+                            <div class="dropzone-ui mt-1">
+                                <p class="dropzone-title mb-1">
+                                    Drop public key here or click to browse
+                                </p>
+                                <p class="dropzone-sub text-muted mb-0">
+                                    No file selected
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mt-3 encrypt-btn">
+                            Encrypt File
+                        </button>
                     </form>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-</body>
-</html>
 
+<style>
+    /* Hide real file input but keep it accessible */
+    .js-dropzone input[type="file"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .dropzone-ui {
+        border: 2px dashed #ced4da;
+        border-radius: 8px;
+        padding: 18px 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s ease,
+                    background-color 0.2s ease,
+                    box-shadow 0.2s ease;
+        background-color: #f8f9fa;
+    }
+
+    .dropzone-ui.dragover {
+        border-color: #0d6efd;
+        background-color: #e9f2ff;
+        box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.2);
+    }
+
+    .dropzone-title {
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .dropzone-sub {
+        font-size: 0.8rem;
+        word-break: break-all;
+    }
+
+    .encrypt-btn {
+        transition: 0.2s;
+        font-weight: 600;
+        padding: 10px 0;
+    }
+
+    .encrypt-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .card {
+        border-radius: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.js-dropzone').forEach(function (wrapper) {
+            const fileInput = wrapper.querySelector('input[type="file"]');
+            const ui = wrapper.querySelector('.dropzone-ui');
+            const nameLabel = wrapper.querySelector('.dropzone-sub');
+
+            if (!fileInput || !ui) return;
+
+            function setFile(file) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                if (nameLabel) {
+                    nameLabel.textContent = file.name;
+                }
+            }
+
+            // Click → open file dialog
+            ui.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            // File chosen via dialog
+            fileInput.addEventListener('change', function () {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    setFile(fileInput.files[0]);
+                }
+            });
+
+            // Drag events
+            ui.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                ui.classList.add('dragover');
+            });
+
+            ui.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                ui.classList.remove('dragover');
+            });
+
+            ui.addEventListener('drop', function (e) {
+                e.preventDefault();
+                ui.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    setFile(files[0]); // first file only
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}
