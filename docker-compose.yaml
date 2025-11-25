@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: ./docker/django.Dockerfile
+    container_name: django
+    command: gunicorn PyCrypt.wsgi:application --bind 0.0.0.0:8000
     env_file:
       - .env
     volumes:
@@ -14,6 +16,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/nginx.Dockerfile
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -34,6 +37,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/django.Dockerfile
+    container_name: celery
     command: celery -A PyCrypt worker -l info
     env_file:
       - .env
