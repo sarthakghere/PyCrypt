@@ -11,8 +11,10 @@ django = ">=5.1.14"
 pycparser = "==2.22"
 sqlparse = "==0.5.1"
 python-dotenv = "*"
+pymysql = "*"
 celery = "*"
 redis = "*"
+gunicorn = "*"
 
 [dev-packages]
 
