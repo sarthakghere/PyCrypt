@@ -233,6 +233,15 @@
             if (!fileInput || !ui) return;
 
             function setFile(file) {
+                const maxSize = 500 * 1024 * 1024; // 500 MB
+
+                if (file.size > maxSize) {
+                    alert("File size exceeds 500MB. Please choose a smaller file.");
+                    fileInput.value = "";  // reset
+                    if (nameLabel) nameLabel.textContent = "No file selected";
+                    return;
+                }
+
                 const dt = new DataTransfer();
                 dt.items.add(file);
                 fileInput.files = dt.files;
