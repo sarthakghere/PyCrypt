@@ -6,11 +6,11 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            {% if encrypted_file_path %}
+            {% if encrypted_file_id %}
             <div class="alert alert-success" role="alert">
                 Files uploaded and encrypted successfully!
             </div>
-            <a href="{% url 'util:download_file' %}?file={{ encrypted_file_path }}" class="btn btn-primary">Download Encrypted File</a>
+            <a href="{% url 'util:download_file' %}?file_id={{ encrypted_file_id }}" class="btn btn-primary">Download Encrypted File</a>
             {% endif %}
 
             {% if decrypted_file_path %}

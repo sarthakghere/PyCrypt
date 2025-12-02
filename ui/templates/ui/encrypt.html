@@ -44,11 +44,19 @@
                             </div>
                         </div>
 
-                        <!-- Email -->
-                        <div class="mb-3">
-                            {{ form.email.label_tag }}
-                            {{ form.email }}
+                        <!-- Email fields -->
+                        <div class="mb-3 email-field">
+                            <label class="form-label">Your Email</label>
+                            {{ form.owner_email }}
                         </div>
+
+                        <div class="mb-3 email-field">
+                            <label class="form-label">Recipient Email</label>
+                            {{ form.recipient_email }}
+                        </div>
+
+
+
 
                         <button type="submit" class="btn btn-primary w-100 mt-3 encrypt-btn">
                             Encrypt File
@@ -116,6 +124,27 @@
     .card {
         border-radius: 10px;
     }
+
+    .email-field {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Clean consistent inputs */
+.email-field input {
+    width: 100%;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    border: 1.5px solid #ced4da;
+    transition: 0.2s ease;
+}
+
+.email-field input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.25);
+}
+
+
 </style>
 
 <script>

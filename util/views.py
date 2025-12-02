@@ -10,7 +10,8 @@ import datetime
 import logging
 from django.conf import settings
 from ui.forms import FileEncryptForm, FileDecryptForm
-from .tasks import send_email_task, cleanup_files_task
+from .tasks import send_email_task, cleanup_files_task, cleanup_encrypted_file_task
+from .models import EncryptedFile
 
 # Create your views here.
 def generate_keys(request):
@@ -59,21 +60,38 @@ def encrypt(request):
         if form.is_valid():
             file = form.cleaned_data['file']
             public_key = form.cleaned_data['publicKey']
-            email = form.cleaned_data['email']
+            owner_email = form.cleaned_data['owner_email']
+            recipient_email = form.cleaned_data['recipient_email']
 
             fs = FileSystemStorage()
             file_name = fs.save(file.name, file)
             public_key_name = fs.save(public_key.name, public_key)
             
-            # Encrypt the file
-            encrypt_file_path = encrypt_file(file_name, public_key_name)
-            
-            # Send the encrypted file via email
-            send_email_task.delay(email, encrypt_file_path)
+            # Encrypt the file → returns relative path like "encrypted_files/foo.enc"
+            encrypted_file_relative_path = encrypt_file(file_name, public_key_name)
 
-            # Save the path to the encrypted file in the session
-            request.session['encrypted_file_path'] = encrypt_file_path
+            # Persist in DB
+            encrypted_file = EncryptedFile.objects.create(
+                file=encrypted_file_relative_path,
+                owner_email=owner_email,  # if you want email optional, make the model field blank=True, null=True
+                status=EncryptedFile.Status.ACTIVE,
+            )
+
+            cleanup_encrypted_file_task.apply_async(args=[encrypted_file.id], countdown=3600)
+
+            # Send the encrypted file via email (async)
+            if recipient_email:
+                send_email_task.delay(recipient_email, encrypted_file.id)
+
+            # Store ID in session instead of raw file path
+            request.session['encrypted_file_id'] = encrypted_file.id
             request.session.pop('decrypted_file_path', None)
+
+            try:
+                os.remove(os.path.join(settings.MEDIA_ROOT, file_name))
+                os.remove(os.path.join(settings.MEDIA_ROOT, public_key_name))
+            except OSError:
+                pass
             
             # Redirect to the success page
             return redirect('ui:success')
@@ -107,23 +125,26 @@ def encrypt_file(file_name, public_key_name):
     nonce = os.urandom(12)
     encrypted_data = aesgcm.encrypt(nonce, file_data, None)
 
-    # Save the encrypted AES key, nonce, original file extension, and encrypted data to the output file
-    encrypt_file_directory = os.path.join(settings.MEDIA_ROOT, 'encrypted_files')
+    # Save the encrypted AES key, nonce, original file extension, and encrypted data
+    relative_dir = 'encrypted_files'
+    encrypt_file_directory = os.path.join(media_path, relative_dir)
     os.makedirs(encrypt_file_directory, exist_ok=True)
+
     original_file_extension = os.path.splitext(file_name)[1]  # Get the file extension
-    encrypt_file_path = os.path.join(encrypt_file_directory, f'{os.path.splitext(file_name)[0]}.enc')
-    with open(encrypt_file_path, "wb") as f:
+
+    encrypted_file_name = f'{os.path.splitext(file_name)[0]}.enc'
+    relative_path = os.path.join(relative_dir, encrypted_file_name)
+    full_path = os.path.join(media_path, relative_path)
+
+    with open(full_path, "wb") as f:
         # Write the encrypted AES key, nonce, and original file extension length
         f.write(encrypted_aes_key + nonce + len(original_file_extension.encode()).to_bytes(1, 'big'))
         # Write the original file extension
         f.write(original_file_extension.encode())
         # Write the encrypted data
         f.write(encrypted_data)
-    
-    # Schedule the cleanup of the media directory
-    cleanup_files_task.apply_async(args=[media_path], countdown=3600)
 
-    return encrypt_file_path
+    return relative_path
 
 def decrypt(request):
     if request.method == 'POST':
@@ -186,17 +207,39 @@ def decrypt_file(file_name, private_key_name):
         with open(decrypted_file_path, "wb") as f:
             f.write(decrypted_data)
 
-        # Schedule the cleanup of the media directory
-        cleanup_files_task.apply_async(args=[media_path], countdown=3600)
+        cleanup_files_task.apply_async(args=[decrypted_file_path], countdown=3600)
+
+        try:
+            os.remove(os.path.join(media_path, private_key_name))
+        except OSError:
+            pass
+
         return decrypted_file_path
     except Exception as e:
         logging.error(f"Decryption failed: {e}")
         raise
 
 def download_file(request):
-    file_path = request.GET.get('file')
-    if file_path and os.path.exists(file_path):
-        request.delete_after_response = file_path
-        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
+    file_id = request.GET.get('file_id')
+    raw_file_path = request.GET.get('file')
+
+    if file_id:
+        # encrypted via DB
+        try:
+            encrypted_file = EncryptedFile.objects.get(pk=file_id, status=EncryptedFile.Status.ACTIVE)
+        except EncryptedFile.DoesNotExist:
+            return redirect('ui:success')
+
+        file_path = encrypted_file.file.path
+
+    elif raw_file_path:
+        # decrypted file path stored in session/context (full path)
+        file_path = raw_file_path
     else:
         return redirect('ui:success')
+
+    if os.path.exists(file_path):
+        request.delete_after_response = file_path
+        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
+
+    return redirect('ui:success')

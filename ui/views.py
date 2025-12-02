@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import FileEncryptForm, FileDecryptForm
+from util.models import EncryptedFile
 
 
 # Create your views here.
@@ -12,9 +13,10 @@ def encrypt_ui(request):
     return render(request, 'ui/encrypt.html', {'form': form})
 
 def success(request):
-    encrypted_file_path = request.session.pop('encrypted_file_path', None)
+    encrypted_file_id = request.session.pop('encrypted_file_id', None)
     decrypted_file_path = request.session.pop('decrypted_file_path', None)
-    context = {'encrypted_file_path': encrypted_file_path,
+
+    context = {'encrypted_file_id': encrypted_file_id,
                'decrypted_file_path': decrypted_file_path}
     return render(request, 'ui/success.html', context)
 
