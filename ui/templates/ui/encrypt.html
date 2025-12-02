@@ -19,12 +19,22 @@
                             {{ form.file }}
 
                             <div class="dropzone-ui mt-1">
-                                <p class="dropzone-title mb-1">
-                                    Drop file here or click to browse
-                                </p>
-                                <p class="dropzone-sub text-muted mb-0">
-                                    No file selected
-                                </p>
+                                <div class="dropzone-inner">
+                                    <div class="dropzone-icon-wrap">
+                                        <div class="dropzone-icon">📂</div>
+                                    </div>
+                                    <div class="dropzone-text">
+                                        <p class="dropzone-title mb-1">
+                                            Drop file here or <span class="dropzone-cta">browse</span>
+                                        </p>
+                                        <p class="dropzone-sub text-muted mb-0">
+                                            No file selected
+                                        </p>
+                                        <p class="dropzone-hint mb-0">
+                                            Max 500MB • Any file type
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -35,14 +45,25 @@
                             {{ form.publicKey }}
 
                             <div class="dropzone-ui mt-1">
-                                <p class="dropzone-title mb-1">
-                                    Drop public key here or click to browse
-                                </p>
-                                <p class="dropzone-sub text-muted mb-0">
-                                    No file selected
-                                </p>
+                                <div class="dropzone-inner">
+                                    <div class="dropzone-icon-wrap">
+                                        <div class="dropzone-icon">🗝️</div>
+                                    </div>
+                                    <div class="dropzone-text">
+                                        <p class="dropzone-title mb-1">
+                                            Drop public key here or <span class="dropzone-cta">browse</span>
+                                        </p>
+                                        <p class="dropzone-sub text-muted mb-0">
+                                            No file selected
+                                        </p>
+                                        <p class="dropzone-hint mb-0">
+                                            .pem file
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
 
                         <!-- Email fields -->
                         <div class="mb-3 email-field">
@@ -51,12 +72,11 @@
                         </div>
 
                         <div class="mb-3 email-field">
-                            <label class="form-label">Recipient Email</label>
+                            <label class="form-label">Recipient Email (Optional)</label>
                             {{ form.recipient_email }}
+                            <div class="form-text text-muted mt-1">
+                                {{ form.recipient_email.help_text }}
                         </div>
-
-
-
 
                         <button type="submit" class="btn btn-primary w-100 mt-3 encrypt-btn">
                             Encrypt File
@@ -71,61 +91,100 @@
 
 <style>
     /* Hide real file input but keep it accessible */
-    .js-dropzone input[type="file"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        border: 0;
-    }
+.js-dropzone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
 
-    .dropzone-ui {
-        border: 2px dashed #ced4da;
-        border-radius: 8px;
-        padding: 18px 14px;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color 0.2s ease,
-                    background-color 0.2s ease,
-                    box-shadow 0.2s ease;
-        background-color: #f8f9fa;
-    }
+/* Main dropzone container */
+.dropzone-ui {
+    border: 1.5px dashed #d0d7de;
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.15s ease;
+    background: linear-gradient(135deg, #f8f9fa, #fdfdff);
+}
 
-    .dropzone-ui.dragover {
-        border-color: #0d6efd;
-        background-color: #e9f2ff;
-        box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.2);
-    }
+/* Inner layout */
+.dropzone-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-    .dropzone-title {
-        font-weight: 500;
-        font-size: 0.95rem;
-    }
+/* Icon circle */
+.dropzone-icon-wrap {
+    flex-shrink: 0;
+}
 
-    .dropzone-sub {
-        font-size: 0.8rem;
-        word-break: break-all;
-    }
+.dropzone-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: rgba(13, 110, 253, 0.08);
+}
 
-    .encrypt-btn {
-        transition: 0.2s;
-        font-weight: 600;
-        padding: 10px 0;
-    }
+/* Texts */
+.dropzone-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
 
-    .encrypt-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
-    }
+.dropzone-title {
+    font-weight: 500;
+    font-size: 0.94rem;
+}
 
-    .card {
-        border-radius: 10px;
-    }
+.dropzone-cta {
+    color: #0d6efd;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
 
-    .email-field {
+.dropzone-sub {
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+
+.dropzone-hint {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Hover / active feel */
+.dropzone-ui:hover {
+    border-color: #0d6efd;
+    background-color: #f4f7ff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Drag state */
+.dropzone-ui.dragover {
+    border-color: #0d6efd;
+    background-color: #e9f2ff;
+    box-shadow: 0 0 0 0.16rem rgba(13, 110, 253, 0.25);
+}
+
+/* Emails layout */
+.email-field {
     display: flex;
     flex-direction: column;
 }
@@ -143,6 +202,23 @@
     border-color: #0d6efd;
     box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.25);
 }
+
+/* Card & button */
+.encrypt-btn {
+    transition: 0.2s;
+    font-weight: 600;
+    padding: 10px 0;
+}
+
+.encrypt-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+}
+
+.card {
+    border-radius: 10px;
+}
+
 
 
 </style>
