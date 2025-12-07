@@ -9,6 +9,12 @@
 
                     <h3 class="text-center mb-4 fw-bold">🔓 Decrypt File</h3>
 
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
                     <form method="POST" action="{% url 'util:decrypt' %}" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
 

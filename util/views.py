@@ -59,21 +59,27 @@ def encrypt(request):
         form = FileEncryptForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data['file']
-            public_key = form.cleaned_data['publicKey']
+            public_key_file = form.cleaned_data['publicKey']
             owner_email = form.cleaned_data['owner_email']
             recipient_email = form.cleaned_data['recipient_email']
 
+            # Read public key
+            try:
+                public_key = serialization.load_pem_public_key(public_key_file.read())
+            except ValueError:
+                form = FileEncryptForm()
+                return render(request, 'ui/encrypt.html', {'form': form, 'error': 'Invalid public key file.'})
+
             fs = FileSystemStorage()
             file_name = fs.save(file.name, file)
-            public_key_name = fs.save(public_key.name, public_key)
             
             # Encrypt the file → returns relative path like "encrypted_files/foo.enc"
-            encrypted_file_relative_path = encrypt_file(file_name, public_key_name)
+            encrypted_file_relative_path = encrypt_file(file_name, public_key)
 
             # Persist in DB
             encrypted_file = EncryptedFile.objects.create(
                 file=encrypted_file_relative_path,
-                owner_email=owner_email,  # if you want email optional, make the model field blank=True, null=True
+                owner_email=owner_email,
                 status=EncryptedFile.Status.ACTIVE,
             )
 
@@ -89,7 +95,6 @@ def encrypt(request):
 
             try:
                 os.remove(os.path.join(settings.MEDIA_ROOT, file_name))
-                os.remove(os.path.join(settings.MEDIA_ROOT, public_key_name))
             except OSError:
                 pass
             
@@ -97,11 +102,8 @@ def encrypt(request):
             return redirect('ui:success')
     return redirect('ui:encrypt')
 
-def encrypt_file(file_name, public_key_name):
+def encrypt_file(file_name, public_key):
     media_path = settings.MEDIA_ROOT
-    
-    with open(os.path.join(media_path, public_key_name), "rb") as key_file:
-        public_key = serialization.load_pem_public_key(key_file.read())
 
     # Generate a random AES key
     aes_key = AESGCM.generate_key(bit_length=256)
@@ -151,14 +153,23 @@ def decrypt(request):
         form = FileDecryptForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data['file']
-            private_key = form.cleaned_data['privateKey']
+            private_key_file = form.cleaned_data['privateKey']
+
+            try:
+                private_key = serialization.load_pem_private_key(private_key_file.read(), password=None)
+            except ValueError:
+                form = FileDecryptForm()
+                return render(request, 'ui/decrypt.html', {'form': form, 'error': 'Invalid private key file.'})
 
             fs = FileSystemStorage()
             file_name = fs.save(file.name, file)
-            private_key_name = fs.save(private_key.name, private_key)
             
-            # Decrypt the file
-            decrypt_file_path = decrypt_file(file_name, private_key_name)
+            try:
+                # Decrypt the file
+                decrypt_file_path = decrypt_file(file_name, private_key)
+            except ValueError:
+                form = FileDecryptForm()
+                return render(request, 'ui/decrypt.html', {'form': form, 'error': 'Decryption failed. Wrong private key.'})
             
             # Save the path to the decrypted file in the session
             request.session['decrypted_file_path'] = decrypt_file_path
@@ -168,14 +179,11 @@ def decrypt(request):
             return redirect('ui:success')
     return redirect('ui:decrypt')
 
-def decrypt_file(file_name, private_key_name):
+def decrypt_file(file_name, private_key):
     try:
         media_path = settings.MEDIA_ROOT
         encrypted_file_path = os.path.join(media_path, file_name)
         logging.debug(f'Encrypted file path: {encrypted_file_path}')
-
-        with open(os.path.join(media_path, private_key_name), "rb") as key_file:
-            private_key = serialization.load_pem_private_key(key_file.read(), password=None)
 
         with open(encrypted_file_path, "rb") as f:
             encrypted_aes_key = f.read(private_key.key_size // 8)
@@ -208,11 +216,6 @@ def decrypt_file(file_name, private_key_name):
             f.write(decrypted_data)
 
         cleanup_files_task.apply_async(args=[decrypted_file_path], countdown=3600)
-
-        try:
-            os.remove(os.path.join(media_path, private_key_name))
-        except OSError:
-            pass
 
         return decrypted_file_path
     except Exception as e:
